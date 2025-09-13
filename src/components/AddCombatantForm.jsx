@@ -3,6 +3,7 @@ import { useEncounter } from '../state/EncounterContext.jsx';
 
 function AddCombatantForm({ isExpanded, setIsExpanded }) {
   const { actions } = useEncounter();
+  const [activeTab, setActiveTab] = useState('single');
   const [formData, setFormData] = useState({
     name: '',
     type: 'PC',
@@ -12,6 +13,7 @@ function AddCombatantForm({ isExpanded, setIsExpanded }) {
     ac: '',
     notes: ''
   });
+  const [partyData, setPartyData] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -69,6 +71,57 @@ function AddCombatantForm({ isExpanded, setIsExpanded }) {
     setFormData(prev => ({ ...prev, init: total.toString() }));
   };
 
+  const handlePartySubmit = (e) => {
+    e.preventDefault();
+    
+    if (!partyData.trim()) {
+      return;
+    }
+
+    const lines = partyData
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+
+    lines.forEach(line => {
+      // Parse line format: "Name HP:## AC:## DEX:##" or just "Name"
+      const parts = line.split(/\s+/);
+      const name = parts[0];
+      
+      let hp = Number(formData.hp) || 0;
+      let ac = Number(formData.ac) || 10;
+      let dex = Number(formData.dex) || 0;
+
+      // Parse HP:value, AC:value, DEX:value from the line
+      parts.slice(1).forEach(part => {
+        if (part.toUpperCase().startsWith('HP:')) {
+          hp = Number(part.substring(3)) || hp;
+        } else if (part.toUpperCase().startsWith('AC:')) {
+          ac = Number(part.substring(3)) || ac;
+        } else if (part.toUpperCase().startsWith('DEX:')) {
+          dex = Number(part.substring(4)) || dex;
+        }
+      });
+
+      const roll = Math.floor(Math.random() * 20) + 1;
+      const initiative = roll + dex;
+
+      actions.addCombatant({
+        name: name,
+        type: formData.type,
+        init: initiative,
+        dex: dex,
+        hp: hp,
+        ac: ac,
+        notes: formData.notes.trim(),
+        tags: [],
+        conditions: []
+      });
+    });
+
+    setPartyData('');
+  };
+
   return (
     <div className="add-combatant-container">
       <div className="add-combatant-header" onClick={() => setIsExpanded(!isExpanded)}>
@@ -78,8 +131,27 @@ function AddCombatantForm({ isExpanded, setIsExpanded }) {
       </div>
       
       {isExpanded && (
-        <form className="add-combatant-form" onSubmit={handleSubmit}>
-          <div className="form-row">
+        <div className="add-combatant-form">
+          <div className="add-tabs">
+            <button
+              type="button"
+              className={`tab-button ${activeTab === 'single' ? 'tab-active' : ''}`}
+              onClick={() => setActiveTab('single')}
+            >
+              Single
+            </button>
+            <button
+              type="button"
+              className={`tab-button ${activeTab === 'party' ? 'tab-active' : ''}`}
+              onClick={() => setActiveTab('party')}
+            >
+              Quick Party
+            </button>
+          </div>
+
+          {activeTab === 'single' && (
+            <form onSubmit={handleSubmit}>
+              <div className="form-row">
             <div className="form-group">
               <label htmlFor="name">Name</label>
               <input
@@ -186,15 +258,109 @@ function AddCombatantForm({ isExpanded, setIsExpanded }) {
               />
             </div>
 
-            <button 
-              type="submit" 
-              className="btn btn-primary"
-              disabled={!formData.name.trim()}
-            >
-              Add
-            </button>
-          </div>
-        </form>
+                <button 
+                  type="submit" 
+                  className="btn btn-primary"
+                  disabled={!formData.name.trim()}
+                >
+                  Add
+                </button>
+              </div>
+            </form>
+          )}
+
+          {activeTab === 'party' && (
+            <form onSubmit={handlePartySubmit}>
+              <div className="party-form">
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="party-type">Type</label>
+                    <select
+                      id="party-type"
+                      value={formData.type}
+                      onChange={(e) => handleChange('type', e.target.value)}
+                    >
+                      <option value="PC">PC</option>
+                      <option value="NPC">NPC</option>
+                      <option value="Monster">Monster</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="party-dex">Dex Mod</label>
+                    <input
+                      id="party-dex"
+                      type="number"
+                      value={formData.dex}
+                      onChange={(e) => handleChange('dex', e.target.value)}
+                      placeholder="0"
+                      min="-5"
+                      max="10"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="party-hp">HP</label>
+                    <input
+                      id="party-hp"
+                      type="number"
+                      value={formData.hp}
+                      onChange={(e) => handleChange('hp', e.target.value)}
+                      placeholder="0"
+                      min="0"
+                      max="999"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="party-ac">AC</label>
+                    <input
+                      id="party-ac"
+                      type="number"
+                      value={formData.ac}
+                      onChange={(e) => handleChange('ac', e.target.value)}
+                      placeholder="10"
+                      min="1"
+                      max="30"
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group form-group-wide">
+                  <label htmlFor="party-data">Party Members (one per line)</label>
+                  <textarea
+                    id="party-data"
+                    className="party-names-input"
+                    value={partyData}
+                    onChange={(e) => setPartyData(e.target.value)}
+                    placeholder="Enter party member data, one per line:&#10;Aragorn HP:85 AC:18 DEX:2&#10;Legolas HP:65 AC:17 DEX:4&#10;Gimli HP:90 AC:19 DEX:0&#10;Gandalf HP:45 AC:15 DEX:1&#10;&#10;Or just names (uses default stats):&#10;Goblin1&#10;Goblin2"
+                    rows="8"
+                  />
+                </div>
+
+                <div className="form-group form-group-wide">
+                  <label htmlFor="party-notes">Notes (applied to all)</label>
+                  <input
+                    id="party-notes"
+                    type="text"
+                    value={formData.notes}
+                    onChange={(e) => handleChange('notes', e.target.value)}
+                    placeholder="Notes applied to all party members"
+                    maxLength={100}
+                  />
+                </div>
+
+                <button 
+                  type="submit" 
+                  className="btn btn-primary"
+                  disabled={!partyData.trim()}
+                >
+                  Add Party
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       )}
     </div>
   );

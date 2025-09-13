@@ -215,6 +215,56 @@ body {
   margin: 0;
 }
 
+.add-tabs {
+  display: flex;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #bdc3c7;
+}
+
+.tab-button {
+  background: none;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #7f8c8d;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.tab-button:hover {
+  color: #2c3e50;
+  background: rgba(52, 152, 219, 0.1);
+}
+
+.tab-active {
+  color: #3498db !important;
+  border-bottom-color: #3498db;
+  background: rgba(52, 152, 219, 0.1);
+}
+
+.party-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.party-names-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #bdc3c7;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.party-names-input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
 .form-row {
   display: flex;
   gap: 1rem;
@@ -362,7 +412,6 @@ body {
   display: flex;
   align-items: center;
   gap: 1rem;
-  cursor: pointer;
 }
 
 .turn-indicator {
@@ -454,6 +503,11 @@ body {
   min-width: 40px;
 }
 
+.stat-group-hp {
+  position: relative;
+  min-width: 60px;
+}
+
 .stat-label {
   font-size: 0.7rem;
   color: #7f8c8d;
@@ -470,6 +524,69 @@ body {
   font-size: 0.8rem;
   color: #7f8c8d;
   margin-left: 0.25rem;
+}
+
+/* HP Controls */
+.hp-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.combat-row:hover .hp-controls {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.hp-btn {
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 3px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.hp-btn-damage {
+  background: #e74c3c;
+  color: white;
+}
+
+.hp-btn-damage:hover {
+  background: #c0392b;
+}
+
+.hp-btn-heal {
+  background: #27ae60;
+  color: white;
+}
+
+.hp-btn-heal:hover {
+  background: #229f54;
+}
+
+.hp-change-input {
+  width: 35px;
+  height: 20px;
+  border: 1px solid #bdc3c7;
+  border-radius: 3px;
+  text-align: center;
+  font-size: 0.75rem;
+  padding: 0;
+}
+
+.hp-change-input:focus {
+  outline: none;
+  border-color: #3498db;
 }
 
 .combatant-notes {
@@ -509,6 +626,30 @@ body {
 .edit-notes {
   width: 100%;
   min-width: 200px;
+}
+
+.init-edit-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.edit-init,
+.edit-dex {
+  width: 50px;
+  text-align: center;
+}
+
+.edit-type {
+  background: white;
+  border: 1px solid #3498db;
+  border-radius: 12px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  min-width: 80px;
 }
 
 /* Action menu */
@@ -706,6 +847,59 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Tab Interface Styles */
+.add-tabs {
+  display: flex;
+  border-bottom: 2px solid #ecf0f1;
+  margin-bottom: 1rem;
+}
+
+.tab-button {
+  background: none;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #7f8c8d;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.tab-button:hover {
+  color: #2c3e50;
+  background: #f8f9fa;
+}
+
+.tab-button.tab-active {
+  color: #2980b9;
+  border-bottom-color: #2980b9;
+  background: #f8f9fa;
+}
+
+/* Party Form Styles */
+.party-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.party-names-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #bdc3c7;
+  border-radius: 4px;
+  font-family: monospace;
+  resize: vertical;
+  min-height: 120px;
+}
+
+.party-names-input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
 }
 
 /* Round indicator */

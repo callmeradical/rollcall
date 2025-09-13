@@ -7,11 +7,15 @@ function CombatRow({ combatant, index, isActive, isNext }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     name: combatant.name,
+    type: combatant.type,
+    init: combatant.init,
+    dex: combatant.dex,
     hp: combatant.hp,
     ac: combatant.ac,
     notes: combatant.notes
   });
   const [showMenu, setShowMenu] = useState(false);
+  const [hpChange, setHpChange] = useState('');
 
   // Close menu when clicking outside
   React.useEffect(() => {
@@ -25,10 +29,14 @@ function CombatRow({ combatant, index, isActive, isNext }) {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [showMenu]);
 
+
   const handleEdit = () => {
     if (isEditing) {
       actions.updateCombatant(combatant.id, {
         name: editData.name.trim() || combatant.name,
+        type: editData.type,
+        init: Number(editData.init) || 0,
+        dex: Number(editData.dex) || 0,
         hp: Number(editData.hp) || 0,
         ac: Number(editData.ac) || 10,
         notes: editData.notes.trim()
@@ -36,6 +44,9 @@ function CombatRow({ combatant, index, isActive, isNext }) {
     } else {
       setEditData({
         name: combatant.name,
+        type: combatant.type,
+        init: combatant.init,
+        dex: combatant.dex,
         hp: combatant.hp,
         ac: combatant.ac,
         notes: combatant.notes
@@ -51,12 +62,20 @@ function CombatRow({ combatant, index, isActive, isNext }) {
     } else if (e.key === 'Escape') {
       setEditData({
         name: combatant.name,
+        type: combatant.type,
+        init: combatant.init,
+        dex: combatant.dex,
         hp: combatant.hp,
         ac: combatant.ac,
         notes: combatant.notes
       });
       setIsEditing(false);
     }
+  };
+
+  const handleEditClick = (e) => {
+    // Prevent edit mode from toggling when clicking on input fields
+    e.stopPropagation();
   };
 
   const handleRemove = () => {
@@ -79,6 +98,34 @@ function CombatRow({ combatant, index, isActive, isNext }) {
     setShowMenu(false);
   };
 
+  const handleHeal = () => {
+    const healAmount = Number(hpChange) || 0;
+    if (healAmount > 0) {
+      const newHp = combatant.hp + healAmount;
+      actions.updateCombatant(combatant.id, { hp: newHp });
+      setHpChange('');
+    }
+  };
+
+  const handleDamage = () => {
+    const damageAmount = Number(hpChange) || 0;
+    if (damageAmount > 0) {
+      const newHp = Math.max(0, combatant.hp - damageAmount);
+      actions.updateCombatant(combatant.id, { hp: newHp });
+      setHpChange('');
+    }
+  };
+
+  const handleHpChangeKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      if (e.shiftKey) {
+        handleHeal();
+      } else {
+        handleDamage();
+      }
+    }
+  };
+
   const rowClass = [
     'combat-row',
     isActive && 'combat-row--active',
@@ -91,7 +138,7 @@ function CombatRow({ combatant, index, isActive, isNext }) {
 
   return (
     <div className={rowClass} role="listitem">
-      <div className="combat-row-main" onClick={() => !isEditing && setIsEditing(true)}>
+      <div className="combat-row-main">
         <div className="turn-indicator">
           {isActive ? '▶' : isNext ? '▷' : '•'}
         </div>
@@ -103,7 +150,7 @@ function CombatRow({ combatant, index, isActive, isNext }) {
               className="edit-input edit-name"
               value={editData.name}
               onChange={(e) => setEditData(prev => ({ ...prev, name: e.target.value }))}
-              onBlur={handleEdit}
+              onClick={handleEditClick}
               onKeyDown={handleKeyPress}
               autoFocus
               maxLength={30}
@@ -113,7 +160,20 @@ function CombatRow({ combatant, index, isActive, isNext }) {
           )}
           
           <div className="combatant-chips">
-            <span className={typeClass}>{combatant.type}</span>
+            {isEditing ? (
+              <select
+                className="edit-input edit-type"
+                value={editData.type}
+                onChange={(e) => setEditData(prev => ({ ...prev, type: e.target.value }))}
+                onClick={handleEditClick}
+              >
+                <option value="PC">PC</option>
+                <option value="NPC">NPC</option>
+                <option value="Monster">Monster</option>
+              </select>
+            ) : (
+              <span className={typeClass}>{combatant.type}</span>
+            )}
             
             {!isEditing && (
               <div className="action-menu">
@@ -147,7 +207,7 @@ function CombatRow({ combatant, index, isActive, isNext }) {
         </div>
 
         <div className="combat-stats">
-          <div className="stat-group">
+          <div className="stat-group stat-group-hp">
             <span className="stat-label">HP</span>
             {isEditing ? (
               <input
@@ -155,12 +215,47 @@ function CombatRow({ combatant, index, isActive, isNext }) {
                 className="edit-input edit-hp"
                 value={editData.hp}
                 onChange={(e) => setEditData(prev => ({ ...prev, hp: e.target.value }))}
+                onClick={handleEditClick}
                 onKeyDown={handleKeyPress}
                 min="0"
                 max="999"
               />
             ) : (
-              <span className="stat-value">{combatant.hp}</span>
+              <>
+                <span className="stat-value">{combatant.hp}</span>
+                <div className="hp-controls">
+                  <button 
+                    className="hp-btn hp-btn-damage"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDamage();
+                    }}
+                    title="Apply damage"
+                  >
+                    −
+                  </button>
+                  <input
+                    type="number"
+                    className="hp-change-input"
+                    value={hpChange}
+                    onChange={(e) => setHpChange(e.target.value)}
+                    onKeyDown={handleHpChangeKeyPress}
+                    placeholder="0"
+                    min="0"
+                    max="999"
+                  />
+                  <button 
+                    className="hp-btn hp-btn-heal"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleHeal();
+                    }}
+                    title="Apply healing"
+                  >
+                    +
+                  </button>
+                </div>
+              </>
             )}
           </div>
 
@@ -172,6 +267,7 @@ function CombatRow({ combatant, index, isActive, isNext }) {
                 className="edit-input edit-ac"
                 value={editData.ac}
                 onChange={(e) => setEditData(prev => ({ ...prev, ac: e.target.value }))}
+                onClick={handleEditClick}
                 onKeyDown={handleKeyPress}
                 min="1"
                 max="30"
@@ -183,12 +279,39 @@ function CombatRow({ combatant, index, isActive, isNext }) {
 
           <div className="stat-group">
             <span className="stat-label">INIT</span>
-            <span className="stat-value">
-              {combatant.init} 
-              {combatant.dex !== 0 && (
-                <span className="dex-mod">({combatant.dex > 0 ? '+' : ''}{combatant.dex})</span>
-              )}
-            </span>
+            {isEditing ? (
+              <div className="init-edit-container">
+                <input
+                  type="number"
+                  className="edit-input edit-init"
+                  value={editData.init}
+                  onChange={(e) => setEditData(prev => ({ ...prev, init: e.target.value }))}
+                  onClick={handleEditClick}
+                  onKeyDown={handleKeyPress}
+                  placeholder="0"
+                  min="-10"
+                  max="50"
+                />
+                <input
+                  type="number"
+                  className="edit-input edit-dex"
+                  value={editData.dex}
+                  onChange={(e) => setEditData(prev => ({ ...prev, dex: e.target.value }))}
+                  onClick={handleEditClick}
+                  onKeyDown={handleKeyPress}
+                  placeholder="Dex"
+                  min="-5"
+                  max="10"
+                />
+              </div>
+            ) : (
+              <span className="stat-value">
+                {combatant.init} 
+                {combatant.dex !== 0 && (
+                  <span className="dex-mod">({combatant.dex > 0 ? '+' : ''}{combatant.dex})</span>
+                )}
+              </span>
+            )}
           </div>
         </div>
 
@@ -200,6 +323,7 @@ function CombatRow({ combatant, index, isActive, isNext }) {
                 className="edit-input edit-notes"
                 value={editData.notes}
                 onChange={(e) => setEditData(prev => ({ ...prev, notes: e.target.value }))}
+                onClick={handleEditClick}
                 onKeyDown={handleKeyPress}
                 placeholder="Notes"
                 maxLength={100}
