@@ -143,6 +143,15 @@ function TopBar() {
       <div className="action-controls">
         <button
           className="btn btn-primary"
+          onClick={actions.rollAllInitiative}
+          title="Roll initiative for all combatants and start encounter"
+          disabled={state.combatants.length === 0}
+        >
+          🎲 Start Encounter
+        </button>
+
+        <button
+          className="btn btn-primary"
           onClick={handleSaveEncounter}
           title="Save encounter to library"
           disabled={state.combatants.length === 0}

@@ -1,6 +1,6 @@
 export const ACTIONS = {
   ADD: 'ADD',
-  UPDATE: 'UPDATE', 
+  UPDATE: 'UPDATE',
   REMOVE: 'REMOVE',
   NEXT_TURN: 'NEXT_TURN',
   PREV_TURN: 'PREV_TURN',
@@ -13,7 +13,8 @@ export const ACTIONS = {
   HOLD: 'HOLD',
   USE_HELD: 'USE_HELD',
   SET_ENCOUNTER_NAME: 'SET_ENCOUNTER_NAME',
-  DUPLICATE: 'DUPLICATE'
+  DUPLICATE: 'DUPLICATE',
+  ROLL_ALL_INITIATIVE: 'ROLL_ALL_INITIATIVE'
 }
 
 export const createActions = (dispatch) => ({
@@ -36,5 +37,6 @@ export const createActions = (dispatch) => ({
   holdAction: (id) => dispatch({ type: ACTIONS.HOLD, payload: id }),
   useHeldAction: (id) => dispatch({ type: ACTIONS.USE_HELD, payload: id }),
   setEncounterName: (name) => dispatch({ type: ACTIONS.SET_ENCOUNTER_NAME, payload: name }),
-  duplicateCombatant: (id) => dispatch({ type: ACTIONS.DUPLICATE, payload: id })
+  duplicateCombatant: (id) => dispatch({ type: ACTIONS.DUPLICATE, payload: id }),
+  rollAllInitiative: () => dispatch({ type: ACTIONS.ROLL_ALL_INITIATIVE })
 })

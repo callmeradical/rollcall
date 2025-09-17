@@ -22,8 +22,9 @@ import {
   mergeWithCustomLibrary,
   preloadCommonCreatures
 } from '../lib/official-creatures.js';
+import StatBlockModal from './StatBlockModal.jsx';
 
-export default function LibraryModal({ isOpen, onClose, onAddCombatant }) {
+export default function LibraryModal({ isOpen, onClose, onAddCombatant, onViewStatBlock }) {
   const [activeTab, setActiveTab] = useState('creatures');
   const [creatureFilter, setCreatureFilter] = useState('all'); // 'all', 'official', 'custom'
   const [allCreatures, setAllCreatures] = useState([]);
@@ -123,12 +124,29 @@ export default function LibraryModal({ isOpen, onClose, onAddCombatant }) {
     setFilters({});
   };
 
-  const handleAddToEncounter = (creature, quantity = 1) => {
+  const rollInitiative = (dexMod = 0) => {
+    const roll = Math.floor(Math.random() * 20) + 1;
+    return roll + dexMod;
+  };
+
+  const handleAddToEncounter = (creature, quantity = 1, rollInit = false) => {
     for (let i = 0; i < quantity; i++) {
       const combatant = creatureToCombatant(creature, {
         name: quantity > 1 ? `${creature.name} ${i + 1}` : creature.name
       });
+
+      if (rollInit) {
+        const dexMod = getCreatureModifier(creature.stats.dex);
+        combatant.init = rollInitiative(dexMod);
+      }
+
       onAddCombatant(combatant);
+    }
+  };
+
+  const handleViewStatBlock = (creature) => {
+    if (onViewStatBlock) {
+      onViewStatBlock(creature);
     }
   };
 
@@ -201,6 +219,8 @@ export default function LibraryModal({ isOpen, onClose, onAddCombatant }) {
               loading={loading}
               availableSources={availableSources}
               onLoadSource={loadCreaturesBySource}
+              rollInitiative={rollInitiative}
+              onViewStatBlock={handleViewStatBlock}
             />
           )}
 
@@ -238,6 +258,7 @@ export default function LibraryModal({ isOpen, onClose, onAddCombatant }) {
             onCancel={() => setEditingCreature(null)}
           />
         )}
+
       </div>
     </div>
   );
@@ -261,7 +282,9 @@ function CreatureTab({
   onImport,
   loading,
   availableSources,
-  onLoadSource
+  onLoadSource,
+  rollInitiative,
+  onViewStatBlock
 }) {
   const [selectedQuantity, setSelectedQuantity] = useState({});
 
@@ -418,8 +441,13 @@ function CreatureTab({
               onAddToEncounter={() =>
                 onAddToEncounter(creature, selectedQuantity[creature.id] || 1)
               }
+              onAddWithInitiative={() =>
+                onAddToEncounter(creature, selectedQuantity[creature.id] || 1, true)
+              }
               onEdit={!creature.sourceBook || creature.sourceBook === 'Custom' ? () => onEdit(creature) : null}
               onDelete={!creature.sourceBook || creature.sourceBook === 'Custom' ? () => onDelete(creature.id) : null}
+              rollInitiative={rollInitiative}
+              onViewStatBlock={() => onViewStatBlock(creature)}
             />
           ))
         )}
@@ -430,7 +458,7 @@ function CreatureTab({
   );
 }
 
-function CreatureCard({ creature, quantity, onQuantityChange, onAddToEncounter, onEdit, onDelete }) {
+function CreatureCard({ creature, quantity, onQuantityChange, onAddToEncounter, onAddWithInitiative, onEdit, onDelete, rollInitiative, onViewStatBlock }) {
   const dexMod = getCreatureModifier(creature.stats.dex);
   const isOfficialCreature = creature.sourceBook && creature.sourceBook !== 'Custom';
 
@@ -438,7 +466,13 @@ function CreatureCard({ creature, quantity, onQuantityChange, onAddToEncounter, 
     <div className={`creature-card ${isOfficialCreature ? 'official' : 'custom'}`}>
       <div className="creature-header">
         <div className="creature-title">
-          <h3>{creature.name}</h3>
+          <button
+            className="creature-name-button"
+            onClick={onViewStatBlock}
+            title="Click to view detailed stat block"
+          >
+            {creature.name}
+          </button>
           <div className="creature-details">
             <span className={`type-chip type-chip--${creature.type.toLowerCase()}`}>
               {creature.type}
@@ -459,19 +493,30 @@ function CreatureCard({ creature, quantity, onQuantityChange, onAddToEncounter, 
               className="quantity-input"
             />
           </div>
-          <button className="btn btn-primary btn-small" onClick={onAddToEncounter}>
-            Add to Encounter
-          </button>
-          {onEdit && (
-            <button className="btn btn-secondary btn-small" onClick={onEdit}>
-              Edit
+          <div className="add-buttons">
+            <button className="btn btn-primary btn-small" onClick={onAddToEncounter}>
+              Add to Encounter
             </button>
-          )}
-          {onDelete && (
-            <button className="btn btn-secondary btn-small menu-item-danger" onClick={onDelete}>
-              Delete
+            <button
+              className="btn btn-secondary btn-small"
+              onClick={onAddWithInitiative}
+              title="Add with rolled initiative"
+            >
+              Add + Roll Init
             </button>
-          )}
+          </div>
+          <div className="creature-card-actions">
+            {onEdit && (
+              <button className="btn btn-secondary btn-small" onClick={onEdit}>
+                Edit
+              </button>
+            )}
+            {onDelete && (
+              <button className="btn btn-secondary btn-small menu-item-danger" onClick={onDelete}>
+                Delete
+              </button>
+            )}
+          </div>
           {isOfficialCreature ? (
             <span className="official-badge">Official</span>
           ) : (

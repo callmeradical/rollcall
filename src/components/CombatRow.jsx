@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useEncounter } from '../state/EncounterContext.jsx';
+import { loadCreatureLibrary } from '../lib/creature-library.js';
 import ConditionBadges from './ConditionBadges.jsx';
+import StatBlockModal from './StatBlockModal.jsx';
 
-function CombatRow({ combatant, index, isActive, isNext }) {
+function CombatRow({ combatant, index, isActive, isNext, onViewStatBlock }) {
   const { actions } = useEncounter();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
@@ -126,6 +128,13 @@ function CombatRow({ combatant, index, isActive, isNext }) {
     }
   };
 
+  const handleViewStatBlock = () => {
+    if (onViewStatBlock) {
+      onViewStatBlock(combatant);
+    }
+    setShowMenu(false);
+  };
+
   const rowClass = [
     'combat-row',
     isActive && 'combat-row--active',
@@ -156,7 +165,13 @@ function CombatRow({ combatant, index, isActive, isNext }) {
               maxLength={30}
             />
           ) : (
-            <span className="combatant-name">{combatant.name}</span>
+            <button
+              className="combatant-name combatant-name-button"
+              onClick={handleViewStatBlock}
+              title="Click to view stat block"
+            >
+              {combatant.name}
+            </button>
           )}
           
           <div className="combatant-chips">
@@ -355,6 +370,7 @@ function CombatRow({ combatant, index, isActive, isNext }) {
           ⏸ Held Action
         </div>
       )}
+
     </div>
   );
 }

@@ -236,7 +236,7 @@ export function encounterReducer(state, action) {
 
       const newCombatants = sortCombatants([...state.combatants, duplicate]);
       const oldActive = state.combatants[state.activeIndex];
-      const newActiveIndex = oldActive 
+      const newActiveIndex = oldActive
         ? newCombatants.findIndex(c => c.id === oldActive.id)
         : 0;
 
@@ -244,6 +244,33 @@ export function encounterReducer(state, action) {
         ...state,
         combatants: newCombatants,
         activeIndex: Math.max(0, newActiveIndex)
+      };
+    }
+
+    case ACTIONS.ROLL_ALL_INITIATIVE: {
+      if (state.combatants.length === 0) return state;
+
+      const rollInitiative = (dexMod) => {
+        const roll = Math.floor(Math.random() * 20) + 1;
+        return roll + dexMod;
+      };
+
+      const updatedCombatants = state.combatants.map(combatant => ({
+        ...combatant,
+        init: rollInitiative(combatant.dex)
+      }));
+
+      const sortedCombatants = sortCombatants(updatedCombatants);
+
+      return {
+        ...state,
+        combatants: sortedCombatants,
+        activeIndex: 0,
+        round: 1,
+        log: [...state.log, {
+          ts: Date.now(),
+          msg: 'Rolled initiative for all combatants - encounter started!'
+        }]
       };
     }
 

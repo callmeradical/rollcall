@@ -2,7 +2,7 @@ import React from 'react';
 import { useEncounter } from '../state/EncounterContext.jsx';
 import CombatRow from './CombatRow.jsx';
 
-function CombatList() {
+function CombatList({ onViewStatBlock }) {
   const { state } = useEncounter();
 
   if (state.combatants.length === 0) {
@@ -30,6 +30,7 @@ function CombatList() {
           index={index}
           isActive={index === state.activeIndex}
           isNext={index === (state.activeIndex + 1) % state.combatants.length}
+          onViewStatBlock={onViewStatBlock}
         />
       ))}
       

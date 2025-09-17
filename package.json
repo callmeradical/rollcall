@@ -4,10 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "npx vite",
+    "build": "npm run build:creatures && npx vite build",
+    "build:app": "npx vite build",
     "build:creatures": "node scripts/build-creatures.js",
-    "preview": "vite preview",
+    "preview": "npx vite preview",
     "test": "jest",
     "test:watch": "jest --watch"
   },

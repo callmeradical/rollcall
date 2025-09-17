@@ -53,6 +53,80 @@ const SOURCE_BOOKS = {
   'BMT': 'The Book of Many Things'
 };
 
+// Resolve _copy references and apply modifications
+function resolveCopy(creature, creatureIndex) {
+  if (!creature._copy) return creature;
+
+  const copyRef = creature._copy;
+  const sourceCreature = creatureIndex[`${copyRef.source}_${copyRef.name}`];
+
+  if (!sourceCreature) {
+    console.warn(`Warning: Could not find copy reference "${copyRef.name}" from "${copyRef.source}"`);
+    return creature;
+  }
+
+  // Deep clone the source creature
+  const resolved = JSON.parse(JSON.stringify(sourceCreature));
+
+  // Override with any direct properties from the copying creature
+  Object.keys(creature).forEach(key => {
+    if (key !== '_copy') {
+      resolved[key] = creature[key];
+    }
+  });
+
+  // Apply modifications if they exist
+  if (copyRef._mod) {
+    return applyModifications(resolved, copyRef._mod);
+  }
+
+  return resolved;
+}
+
+// Apply _mod transformations to a creature
+function applyModifications(creature, mods) {
+  let modifiedCreature = creature;
+
+  // Handle text replacements (*)
+  if (mods['*']) {
+    const globalMod = mods['*'];
+    if (globalMod.mode === 'replaceTxt') {
+      const regex = new RegExp(globalMod.replace, 'g');
+      modifiedCreature = replaceInObject(modifiedCreature, regex, globalMod.with);
+    }
+  }
+
+  // Handle trait modifications
+  if (mods.trait) {
+    if (Array.isArray(mods.trait)) {
+      mods.trait.forEach(traitMod => {
+        if (traitMod.mode === 'appendArr') {
+          if (!modifiedCreature.trait) modifiedCreature.trait = [];
+          modifiedCreature.trait.push(...traitMod.items);
+        }
+      });
+    }
+  }
+
+  return modifiedCreature;
+}
+
+// Recursively replace text in object properties
+function replaceInObject(obj, regex, replacement) {
+  if (typeof obj === 'string') {
+    return obj.replace(regex, replacement);
+  } else if (Array.isArray(obj)) {
+    return obj.map(item => replaceInObject(item, regex, replacement));
+  } else if (obj && typeof obj === 'object') {
+    const newObj = {};
+    Object.keys(obj).forEach(key => {
+      newObj[key] = replaceInObject(obj[key], regex, replacement);
+    });
+    return newObj;
+  }
+  return obj;
+}
+
 // Convert 5etools creature to our format
 function convertCreature(fiveToolsCreature) {
   const creature = {
@@ -330,6 +404,34 @@ async function processCreatures() {
 
   console.log(`Found ${bestiaryFiles.length} bestiary files`);
 
+  // First pass: Load all creatures into an index for copy resolution
+  console.log('🔍 First pass: Loading all creatures for copy resolution...');
+  const creatureIndex = {};
+  const allRawCreatures = [];
+
+  for (const filename of bestiaryFiles) {
+    const filePath = path.join(BESTIARY_PATH, filename);
+    const source = filename.replace('bestiary-', '').replace('.json', '').toUpperCase();
+
+    try {
+      const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      const creatures = data.monster || [];
+
+      creatures.forEach(creature => {
+        const key = `${creature.source}_${creature.name}`;
+        creatureIndex[key] = creature;
+        allRawCreatures.push(creature);
+      });
+
+    } catch (error) {
+      console.error(`Error loading ${filename}:`, error.message);
+    }
+  }
+
+  console.log(`📚 Loaded ${Object.keys(creatureIndex).length} creatures into index`);
+
+  // Second pass: Resolve copies and convert
+  console.log('🔧 Second pass: Resolving copies and converting...');
   const allCreatures = [];
   const sourceStats = {};
 
@@ -343,9 +445,11 @@ async function processCreatures() {
 
       console.log(`Processing ${creatures.length} creatures from ${source}...`);
 
-      const convertedCreatures = creatures.map(convertCreature);
-      allCreatures.push(...convertedCreatures);
+      // Resolve copies first, then convert
+      const resolvedCreatures = creatures.map(creature => resolveCopy(creature, creatureIndex));
+      const convertedCreatures = resolvedCreatures.map(convertCreature);
 
+      allCreatures.push(...convertedCreatures);
       sourceStats[source] = creatures.length;
 
       // Save individual source file
