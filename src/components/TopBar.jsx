@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useEncounter } from '../state/EncounterContext.jsx';
+import { addEncounterToLibrary, loadCreatureLibrary } from '../lib/creature-library.js';
 
 function TopBar() {
   const { state, actions } = useEncounter();
@@ -27,6 +28,67 @@ function TopBar() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleSaveEncounter = () => {
+    if (state.combatants.length === 0) {
+      alert('Cannot save empty encounter');
+      return;
+    }
+
+    // Get creature library to map combatants back to creatures
+    const creatureLibrary = loadCreatureLibrary();
+
+    // Build creatures array for the encounter
+    const encounterCreatures = [];
+    const creatureGroups = {};
+
+    state.combatants.forEach(combatant => {
+      const baseCreatureId = combatant.creatureId;
+
+      if (baseCreatureId) {
+        // This combatant came from the library
+        if (creatureGroups[baseCreatureId]) {
+          creatureGroups[baseCreatureId]++;
+        } else {
+          creatureGroups[baseCreatureId] = 1;
+        }
+      } else {
+        // This is a custom combatant, add as individual entry
+        encounterCreatures.push({
+          creatureId: `custom_${combatant.id}`,
+          count: 1,
+          notes: `${combatant.name} (${combatant.type}, AC ${combatant.ac}, HP ${combatant.hp})`
+        });
+      }
+    });
+
+    // Add grouped creatures to encounter
+    Object.entries(creatureGroups).forEach(([creatureId, count]) => {
+      encounterCreatures.push({
+        creatureId,
+        count,
+        notes: ''
+      });
+    });
+
+    const encounterData = {
+      name: state.encounterName,
+      description: `Encounter from Round ${state.round}`,
+      creatures: encounterCreatures,
+      environment: '',
+      difficulty: 'medium',
+      tags: ['saved-encounter'],
+      notes: `Saved on ${new Date().toLocaleString()}`,
+      source: 'Current Session'
+    };
+
+    try {
+      addEncounterToLibrary(encounterData);
+      alert(`Encounter "${state.encounterName}" saved to library!`);
+    } catch (error) {
+      alert('Failed to save encounter: ' + error.message);
+    }
   };
 
   const canGoPrev = state.combatants.length > 0;
@@ -80,13 +142,22 @@ function TopBar() {
 
       <div className="action-controls">
         <button
+          className="btn btn-primary"
+          onClick={handleSaveEncounter}
+          title="Save encounter to library"
+          disabled={state.combatants.length === 0}
+        >
+          Save
+        </button>
+
+        <button
           className="btn btn-secondary"
           onClick={actions.clearEncounter}
           title="Clear all combatants"
         >
           Clear
         </button>
-        
+
         <button
           className="btn btn-secondary"
           onClick={handlePrint}
