@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run build:creatures && vite build",
+    "build": "vite build",
     "build:creatures": "node scripts/build-creatures.js",
     "preview": "vite preview",
     "test": "jest",
