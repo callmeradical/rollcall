@@ -4,12 +4,20 @@
 let cachedIndex = null;
 let cachedCreatures = new Map();
 
+// Get the correct base URL for data files
+const getDataURL = (path) => {
+  const base = import.meta.env.BASE_URL || '/';
+  const url = `${base}data/creatures/${path}`.replace(/\/+/g, '/');
+  console.log('Loading creature data from:', url);
+  return url;
+};
+
 // Load the creature index
 export async function loadCreatureIndex() {
   if (cachedIndex) return cachedIndex;
 
   try {
-    const response = await fetch('/data/creatures/index.json');
+    const response = await fetch(getDataURL('index.json'));
     if (!response.ok) {
       throw new Error(`Failed to load creature index: ${response.status}. Make sure to run 'npm run build:creatures' first.`);
     }
@@ -38,7 +46,7 @@ export async function loadCreaturesBySource(source) {
   }
 
   try {
-    const response = await fetch(`/data/creatures/${sourceKey}.json`);
+    const response = await fetch(getDataURL(`${sourceKey}.json`));
     if (!response.ok) {
       throw new Error(`Failed to load creatures from ${source}: ${response.status}`);
     }
@@ -58,7 +66,7 @@ export async function loadAllCreatures() {
   }
 
   try {
-    const response = await fetch('/data/creatures/all-creatures.json');
+    const response = await fetch(getDataURL('all-creatures.json'));
     if (!response.ok) {
       throw new Error(`Failed to load all creatures: ${response.status}`);
     }
